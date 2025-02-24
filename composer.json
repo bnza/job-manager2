@@ -1,0 +1,31 @@
+{
+    "name": "bnza/job-manager2",
+    "description": "description",
+    "minimum-stability": "alpha",
+    "license": "MIT",
+    "type": "symfony-bundle",
+    "version": "0.0",
+    "authors": [
+        {
+            "name": "Pietro Baldassarri",
+            "email": "pietro.baldassarri@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=8.4",
+        "doctrine/doctrine-migrations-bundle": "^3.0",
+        "symfony/http-kernel": "^7.2",
+        "symfony/messenger": "^7.2",
+        "symfony/orm-pack": "^2.4"
+    },
+    "autoload": {
+        "psr-4": {
+            "Bnza\\JobManagerBundle\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Bnza\\JobManagerBundle\\Tests\\": "tests/"
+        }
+    }
+}

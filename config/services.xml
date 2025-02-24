@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<container xmlns="http://symfony.com/schema/dic/services"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+
+    <parameters>
+        <!--        <parameter key="bnza_job_manager.em_id">doctrine.orm.entity_manager.%bnza_job_manager.em_name%</parameter>-->
+        <parameter key="bnza_job_manager.em_id">doctrine.orm.%bnza_job_manager.em_name%_entity_manager</parameter>
+        <parameter key="bnza_job_manager.em_id2">doctrine.orm.bnza_job_manager.bnza_job_manager_entity_manager</parameter>
+    </parameters>
+    <services>
+
+        <service id="bnza_job_manager.command.migrations_migrate" class="Bnza\JobManagerBundle\Command\MigrateCommand" public="false">
+            <argument type="service" id="doctrine"/>
+            <argument key="$emName" type="string">%bnza_job_manager.em_name%</argument>
+            <tag name="console.command" command="bnza:job-manager:migrations:migrate"/>
+        </service>
+
+        <service id="bnza_job_manager.command.migrations_diff" class="Bnza\JobManagerBundle\Command\DiffCommand" public="false">
+            <argument type="service" id="doctrine"/>
+            <argument key="$emName" type="string">%bnza_job_manager.em_name%</argument>
+            <tag name="console.command" command="bnza:job-manager:migrations:diff"/>
+        </service>
+
+        <service id="bnza_job_manager.job_repository" class="Bnza\JobManagerBundle\Repository\JobRepository" public="false">
+            <argument type="service" id="%bnza_job_manager.em_id%"/>
+            <tag name="doctrine.repository"/>
+        </service>
+
+        <service id="bnza_job_manager.job_event_subscriber" class="Bnza\JobManagerBundle\EventSubscriber\JobSubscriber" public="false">
+            <argument type="service" id="doctrine.orm.bnza_job_manager_entity_manager"/>
+            <!--            <argument type="service" id="%bnza_job_manager.em_id%"/>-->
+            <argument type="service" id="validator"/>
+            <tag name="kernel.event_subscriber"/>
+        </service>
+
+    </services>
+
+</container>
