@@ -9,14 +9,16 @@ class Job
 {
     private string $name;
     private string $class;
+
+    private string $service;
     private string $description;
     private array $parameters;
-    private int $stepsCount;
+    private int $stepsCount = 0;
     private Status $status;
-    private float $startedAt;
-    private float $terminatedAt;
+    private ?float $startedAt;
+    private ?float $terminatedAt;
 
-    public function __construct(private Uuid $id)
+    public function __construct(private ?Uuid $id)
     {
     }
 
@@ -97,7 +99,7 @@ class Job
         return $this;
     }
 
-    public function getStartedAt(): float
+    public function getStartedAt(): ?float
     {
         return $this->startedAt;
     }
@@ -109,7 +111,7 @@ class Job
         return $this;
     }
 
-    public function getTerminatedAt(): float
+    public function getTerminatedAt(): ?float
     {
         return $this->terminatedAt;
     }
@@ -117,6 +119,18 @@ class Job
     public function setTerminatedAt(float $terminatedAt): Job
     {
         $this->terminatedAt = $terminatedAt;
+
+        return $this;
+    }
+
+    public function getService(): string
+    {
+        return $this->service;
+    }
+
+    public function setService(string $service): Job
+    {
+        $this->service = $service;
 
         return $this;
     }

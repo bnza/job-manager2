@@ -7,9 +7,12 @@
     <parameters>
         <!--        <parameter key="bnza_job_manager.em_id">doctrine.orm.entity_manager.%bnza_job_manager.em_name%</parameter>-->
         <parameter key="bnza_job_manager.em_id">doctrine.orm.%bnza_job_manager.em_name%_entity_manager</parameter>
-        <parameter key="bnza_job_manager.em_id2">doctrine.orm.bnza_job_manager.bnza_job_manager_entity_manager</parameter>
     </parameters>
     <services>
+
+        <service id="bnza_job_manager.job_runner" class="Bnza\JobManagerBundle\Command\MigrateCommand" public="false">
+            <argument type="service" id="%bnza_job_manager.em_id%"/>
+        </service>
 
         <service id="bnza_job_manager.command.migrations_migrate" class="Bnza\JobManagerBundle\Command\MigrateCommand" public="false">
             <argument type="service" id="doctrine"/>
@@ -28,11 +31,33 @@
             <tag name="doctrine.repository"/>
         </service>
 
+        <service id="bnza_job_manager.job_locator" class="Bnza\JobManagerBundle\JobServicesIdLocator"/>
+
+        <service id="bnza_job_manager.job_runner" class="Bnza\JobManagerBundle\JobRunner">
+            <argument key="$registry" type="service" id="doctrine"/>
+            <argument key="$emName" type="string">%bnza_job_manager.em_name%</argument>
+            <argument key="$locator" type="service" id="bnza_job_manager.job_locator"/>
+        </service>
+
         <service id="bnza_job_manager.job_event_subscriber" class="Bnza\JobManagerBundle\EventSubscriber\JobSubscriber" public="false">
-            <argument type="service" id="doctrine.orm.bnza_job_manager_entity_manager"/>
-            <!--            <argument type="service" id="%bnza_job_manager.em_id%"/>-->
+            <argument key="$registry" type="service" id="doctrine"/>
+            <argument key="$emName" type="string">%bnza_job_manager.em_name%</argument>
             <argument type="service" id="validator"/>
-            <tag name="kernel.event_subscriber"/>
+            <tag name="kernel.event_subscriber" lazy="true"/>
+        </service>
+
+        <service id="bnza_job_manager.abstract_work_unit" class="Bnza\JobManagerBundle\AbstractWorkUnit" abstract="true" shared="false">
+            <argument key="$eventDispatcher" type="service" id="event_dispatcher"/>
+        </service>
+
+        <service id="bnza_job_manager.abstract_job" class="Bnza\JobManagerBundle\AbstractJob" parent="bnza_job_manager.abstract_work_unit"
+            abstract="true" shared="false">
+            <tag name="bnza_job_manager.job"/>
+        </service>
+
+        <service id="bnza_job_manager.abstract_task" class="Bnza\JobManagerBundle\AbstractTask" parent="bnza_job_manager.abstract_work_unit"
+            abstract="true" shared="false">
+            <tag name="bnza_job_manager.task"/>
         </service>
 
     </services>

@@ -13,6 +13,7 @@
         </id>
         <field name="name"/>
         <field name="class"/>
+        <field name="service"/>
         <field name="parameters" type="json" nullable="true">
             <options>
                 <option name="jsonb">true</option>

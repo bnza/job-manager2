@@ -20,15 +20,15 @@ class StatusType extends Type
         return self::STATUS_TYPE;
     }
 
-    public function convertToPHPValue(mixed $value, AbstractPlatform $platform): mixed
+    public function convertToPHPValue(mixed $value, AbstractPlatform $platform): Status
     {
-        /** @var Status */
-        return $value();
+        return new Status(is_null($value) ? null : $value);
     }
 
-    public function convertToDatabaseValue($value, AbstractPlatform $platform): Status
+    public function convertToDatabaseValue($value, AbstractPlatform $platform): int
     {
-        return new Status($value);
+        /** @var Status */
+        return is_null($value) ? 0 : $value();
     }
 
     public function getDoctrineTypeMapping(): string

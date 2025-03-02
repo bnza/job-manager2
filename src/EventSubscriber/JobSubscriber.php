@@ -4,22 +4,29 @@ namespace Bnza\JobManagerBundle\EventSubscriber;
 
 use Bnza\JobManagerBundle\Event\JobEvent;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\Persistence\ManagerRegistry;
+use Doctrine\Persistence\ObjectManager;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\Validator\Exception\ValidationFailedException;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class JobSubscriber implements EventSubscriberInterface
 {
+    private ObjectManager $entityManager;
 
-    public function __construct(private EntityManagerInterface $entityManager, private ValidatorInterface $validator)
-    {
-
+    public function __construct(
+        private ManagerRegistry $registry,
+        private readonly string $emName,
+        private ValidatorInterface $validator
+    ) {
+        $this->entityManager = $this->registry->getManager($this->emName);
     }
 
     public static function getSubscribedEvents(): array
     {
         return [
-            JobEvent::CREATED => 'onJobCreated',
+//            JobEvent::CREATED => 'onJobCreated',
             JobEvent::PARAMETERS_SET => 'persistAndFlush',
         ];
     }

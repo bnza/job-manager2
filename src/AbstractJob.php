@@ -3,99 +3,68 @@
 namespace Bnza\JobManagerBundle;
 
 
-use Bnza\JobManagerBundle\Entity\Job as JobEntity;
-use Bnza\JobManagerBundle\Event\JobEvent;
 use InvalidArgumentException;
 use SplQueue;
-use Symfony\Component\EventDispatcher\EventDispatcher;
-use Symfony\Component\Uid\Uuid;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
-abstract class AbstractJob implements JobInterface
+abstract class AbstractJob extends AbstractWorkUnit implements JobInterface
 {
-    protected readonly Uuid $id;
-    protected readonly SplQueue $tasks;
-    protected readonly JobEvent $event;
-    protected readonly array $parameters;
 
-    abstract public function getName(): string;
 
-    abstract public function getDescription(): string;
+    /** @var SplQueue<WorkUnitInterface> */
+    protected readonly SplQueue $workUnits;
 
-    public function __construct(private EventDispatcher $eventDispatcher, Uuid|null $id = null)
+    /** @var array<WorkUnitInterface> */
+    protected array $completedWorkUnits;
+
+    public function __construct(EventDispatcherInterface $eventDispatcher, array $workUnits)
     {
-        $entity = $this->toEntity();
-
-        if (static::class !== $entity->getClass()) {
-            throw new InvalidArgumentException(
-                'Job entity "class" property must contain "'.static::class.'". Got: '.$entity->getClass()
-            );
+        parent::__construct($eventDispatcher);
+        $this->workUnits = new SplQueue();
+        foreach ($workUnits as $workUnit) {
+            if (!$workUnit instanceof WorkUnitInterface) {
+                throw new InvalidArgumentException(
+                    sprintf(
+                        'WorkUnit must implement %s: %s given',
+                        WorkUnitInterface::class,
+                        get_class($workUnit)
+                    )
+                );
+            }
+            $this->workUnits->enqueue($workUnit);
         }
-
-        $this->tasks = new SplQueue();
-        $this->event = new JobEvent($this);
-
-        $this->eventDispatcher->dispatch($this->event, JobEvent::CREATED);
+        $this->completedWorkUnits = [];
     }
 
-    public function getId(): Uuid
+    public final function run(): array
     {
-        return $this->id;
-    }
-
-    public function toEntity(): JobEntity
-    {
-        return (new JobEntity($this->id))
-            ->setClass(static::class)
-            ->setDescription($this->getDescription())
-            ->setName($this->getName())
-            ->setParameters($this->getParameters());
-    }
-
-    public function hasParameter(string $key): bool
-    {
-        return array_key_exists($key, $this->parameters);
-    }
-
-    public function getParameter(string $key): mixed
-    {
-        if (!$this->hasParameter($key)) {
-            throw new InvalidArgumentException("Parameter '$key' not found");
+        $this->setUp();
+        foreach ($this->workUnits as /** @var WorkUnitInterface $workUnit */ $workUnit) {
+            $entity = $workUnit->toEntity()->setParameters($this->parameters);
+            $workUnit->configure($entity, $this);
+            $workUnitResults = $workUnit->run();
+            $this->parameters = array_merge($this->parameters, $workUnitResults);
+            $this->completedWorkUnits[] = $workUnit;
         }
+        $this->tearDown();
 
-        return $this->parameters[$key];
+        return $this->returnParameters();
     }
 
-    public function setParameter(string $key, mixed $value, bool $dispatch = true): static
+    public function rollback(): void
     {
-        $this->parameters[$key] = $value;
-        if ($dispatch) {
-            $this->eventDispatcher->dispatch($this->event, JobEvent::PARAMETERS_SET);
+        for ($i = count($this->completedWorkUnits) - 1; $i >= 0; $i--) {
+            $this->workUnits[$i]->rollback();
         }
-
-        return $this;
     }
 
-    public function getParameters(): array
+    public function getStepsCount(): int
     {
-        return array_merge([], $this->parameters);
+        return $this->workUnits->count();
     }
 
-    public function setParameters(array $parameters, bool $dispatch = true): static
+    public final function getType(): string
     {
-        foreach ($parameters as $name => $value) {
-            $this->parameters[$name] = $value;
-        }
-        if ($dispatch) {
-            $this->eventDispatcher->dispatch($this->event, JobEvent::PARAMETERS_SET);
-        }
-
-        return $this;
-    }
-
-    public function run(): void
-    {
-        foreach ($this->tasks as $task) {
-            $task->run();
-        }
+        return self::WORK_UNIT_TYPE_JOB;
     }
 }

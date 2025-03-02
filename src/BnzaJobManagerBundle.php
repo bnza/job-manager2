@@ -2,6 +2,7 @@
 
 namespace Bnza\JobManagerBundle;
 
+use Bnza\JobManagerBundle\DependencyInjection\Compiler\JobServicesIdLocatorCompilerPass;
 use Symfony\Component\Config\Definition\Configurator\DefinitionConfigurator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
@@ -21,5 +22,10 @@ class BnzaJobManagerBundle extends AbstractBundle
             ->set('bnza_job_manager.em_name', $config['em_name']);
     }
 
-
+    public function build(ContainerBuilder $container): void
+    {
+        parent::build($container);
+//        $container->addCompilerPass(new AddTagsToAutoconfiguredServicesPass());
+        $container->addCompilerPass(new JobServicesIdLocatorCompilerPass());
+    }
 }
