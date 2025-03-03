@@ -3,18 +3,18 @@
 namespace Bnza\JobManagerBundle;
 
 
+use Bnza\JobManagerBundle\Entity\WorkUnitEntity;
 use Bnza\JobManagerBundle\Event\WorkUnitEvent;
 use Exception;
 use InvalidArgumentException;
-use SplQueue;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 abstract class AbstractJob extends AbstractWorkUnit implements JobInterface
 {
 
 
-    /** @var SplQueue<WorkUnitInterface> */
-    protected readonly SplQueue $workUnits;
+    /** @var array<string, WorkUnitInterface> */
+    protected readonly array $workUnits;
 
     /** @var array<WorkUnitInterface> */
     protected array $completedWorkUnits;
@@ -22,8 +22,8 @@ abstract class AbstractJob extends AbstractWorkUnit implements JobInterface
     public function __construct(EventDispatcherInterface $eventDispatcher, array $workUnits)
     {
         parent::__construct($eventDispatcher);
-        $this->workUnits = new SplQueue();
-        foreach ($workUnits as $workUnit) {
+        $_workUnits = [];
+        foreach ($workUnits as $id => $workUnit) {
             if (!$workUnit instanceof WorkUnitInterface) {
                 throw new InvalidArgumentException(
                     sprintf(
@@ -33,8 +33,9 @@ abstract class AbstractJob extends AbstractWorkUnit implements JobInterface
                     )
                 );
             }
-            $this->workUnits->enqueue($workUnit);
+            $_workUnits[$id] = ($workUnit);
         }
+        $this->workUnits = $_workUnits;
         $this->completedWorkUnits = [];
     }
 
@@ -43,27 +44,38 @@ abstract class AbstractJob extends AbstractWorkUnit implements JobInterface
         $event = new WorkUnitEvent($this);
         $this->eventDispatcher->dispatch($event, WorkUnitEvent::SETUP);
         $this->setUp();
+        $this->state->getStatus()->running();
+        $this->state->setStepsCount($this->getStepsCount());
+        $this->state->setStartedAt(microtime(true));
         $this->eventDispatcher->dispatch($event, WorkUnitEvent::STARTED);
         try {
-            foreach ($this->workUnits as /** @var WorkUnitInterface $workUnit */ $workUnit) {
+            foreach ($this->workUnits as $serviceId => /** @var WorkUnitInterface $workUnit */ $workUnit) {
                 ++$this->currentStepNumber;
-                $entity = $workUnit->toEntity()->setParameters($this->parameters);
-                $workUnit->configure($entity, $this);
+                $entity = new WorkUnitEntity()
+                    ->setParameters($this->state->getParameters())
+                    ->setService($serviceId)
+                    ->setParent(
+                        $this->getEntity()
+                    );
+                $workUnit->configure($entity);
                 $this->eventDispatcher->dispatch($event, WorkUnitEvent::STEP_STARTED);
                 $workUnitResults = $workUnit->run();
-                $this->parameters = array_merge($this->parameters, $workUnitResults);
+                $this->state->setParameters(array_merge($this->state->getParameters(), $workUnitResults));
                 $this->eventDispatcher->dispatch($event, WorkUnitEvent::STEP_TERMINATED);
                 $this->completedWorkUnits[] = $workUnit;
             }
+            $this->state->getStatus()->success();
             $this->eventDispatcher->dispatch($event, WorkUnitEvent::SUCCESS);
             $this->tearDown();
             $this->eventDispatcher->dispatch($event, WorkUnitEvent::TEARDOWN);
         } catch (Exception $e) {
+            $this->state->getStatus()->error();
             $this->eventDispatcher->dispatch($event, WorkUnitEvent::ERROR);
             $this->rollback();
             $this->eventDispatcher->dispatch($event, WorkUnitEvent::ROLLBACK);
             throw $e;
         }
+        $this->state->setTerminatedAt(microtime(true));
         $this->eventDispatcher->dispatch($event, WorkUnitEvent::TERMINATED);
 
         return $this->returnParameters();
@@ -78,7 +90,7 @@ abstract class AbstractJob extends AbstractWorkUnit implements JobInterface
 
     public function getStepsCount(): int
     {
-        return $this->workUnits->count();
+        return count($this->workUnits);
     }
 
     public final function getType(): string

@@ -11,10 +11,6 @@ class JobServicesIdLocatorCompilerPass implements CompilerPassInterface
 {
     public function process(ContainerBuilder $container): void
     {
-
-        /*if (!$container->hasDefinition(JobServicesIdLocator::class)) {
-            return;
-        }*/
         $definition = $container->getDefinition('bnza_job_manager.job_locator');
         $taggedServices = $container->findTaggedServiceIds('bnza_job_manager.job');
         $services = [];

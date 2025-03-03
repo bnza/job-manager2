@@ -5,7 +5,8 @@
     xsi:schemaLocation="https://doctrine-project.org/schemas/orm/doctrine-mapping
                           https://www.doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
 
-    <entity name="Bnza\JobManagerBundle\Entity\Job" schema="bnza_job_manager" table="job"
+
+    <entity name="Bnza\JobManagerBundle\Entity\WorkUnitEntity" schema="bnza_job_manager" table="job"
         repository-class="Bnza\JobManagerBundle\Repository\JobRepository">
         <id name="id" type="uuid">
             <generator strategy="CUSTOM"/>
@@ -20,9 +21,14 @@
             </options>
         </field>
         <field name="stepsCount" type="smallint"/>
-        <field name="status" type="job_status"/>
-        <field name="startedAt" type="bigint" nullable="true"/>
-        <field name="terminatedAt" type="bigint" nullable="true"/>
+        <embedded name="status" class="Bnza\JobManagerBundle\Entity\Status"/>
+        <field name="startedAt" type="microtime" nullable="true"/>
+        <field name="terminatedAt" type="microtime" nullable="true"/>
+        <many-to-one field="parent" target-entity="WorkUnitEntity" inversed-by="children">
+            <join-column name="parent_id" on-delete="CASCADE"/>
+        </many-to-one>
+
+        <one-to-many field="children" target-entity="WorkUnitEntity" mapped-by="parent"/>
     </entity>
 
 </doctrine-mapping>

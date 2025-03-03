@@ -2,7 +2,7 @@
 
 namespace Bnza\JobManagerBundle;
 
-use Bnza\JobManagerBundle\Entity\Job as JobEntity;
+use Bnza\JobManagerBundle\Entity\WorkUnitEntity as JobEntity;
 
 interface JobFactoryInterface
 {

@@ -16,6 +16,9 @@ abstract class AbstractTask extends AbstractWorkUnit
         $event = new WorkUnitEvent($this);
         $this->eventDispatcher->dispatch($event, WorkUnitEvent::SETUP);
         $this->setUp();
+        $this->state->getStatus()->running();
+        $this->state->setStepsCount($this->getStepsCount());
+        $this->state->setStartedAt(microtime(true));
         $this->eventDispatcher->dispatch($event, WorkUnitEvent::STARTED);
         try {
             foreach ($this->getSteps() as $step) {
@@ -24,14 +27,18 @@ abstract class AbstractTask extends AbstractWorkUnit
                 $this->executeStep($step);
                 $this->eventDispatcher->dispatch($event, WorkUnitEvent::STEP_TERMINATED);
             }
-            $this->tearDown();
+            $this->state->getStatus()->success();
             $this->eventDispatcher->dispatch($event, WorkUnitEvent::SUCCESS);
+            $this->tearDown();
+            $this->eventDispatcher->dispatch($event, WorkUnitEvent::TEARDOWN);
         } catch (Exception $e) {
+            $this->state->getStatus()->error();
             $this->eventDispatcher->dispatch($event, WorkUnitEvent::ERROR);
             $this->rollback();
             $this->eventDispatcher->dispatch($event, WorkUnitEvent::ROLLBACK);
             throw $e;
         }
+        $this->state->setTerminatedAt(microtime(true));
         $this->eventDispatcher->dispatch($event, WorkUnitEvent::TERMINATED);
 
         return $this->returnParameters();

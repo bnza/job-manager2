@@ -2,6 +2,7 @@
 
 namespace Bnza\JobManagerBundle\Event;
 
+use Bnza\JobManagerBundle\Entity\WorkUnitEntity;
 use Bnza\JobManagerBundle\WorkUnitInterface;
 use Symfony\Contracts\EventDispatcher\Event;
 
@@ -29,5 +30,4 @@ class WorkUnitEvent extends Event
     {
         return $this->workUnit;
     }
-
 }

@@ -3,15 +3,19 @@
 namespace Bnza\JobManagerBundle\EventSubscriber;
 
 use Bnza\JobManagerBundle\CacheHelper;
+use Bnza\JobManagerBundle\Entity\Status;
+use Bnza\JobManagerBundle\Entity\WorkUnitEntity;
 use Bnza\JobManagerBundle\Event\WorkUnitEvent;
-use Bnza\JobManagerBundle\Exception\JobCancelledException;
 use Doctrine\Persistence\ManagerRegistry;
 use Doctrine\Persistence\ObjectManager;
+use Doctrine\Persistence\ObjectRepository;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Symfony\Component\Uid\Uuid;
 
 class JobSubscriber implements EventSubscriberInterface
 {
     private ObjectManager $entityManager;
+    private ObjectRepository $repository;
 
     public function __construct(
         private readonly ManagerRegistry $registry,
@@ -19,13 +23,16 @@ class JobSubscriber implements EventSubscriberInterface
         private readonly CacheHelper $cacheHelper
     ) {
         $this->entityManager = $this->registry->getManager($this->emName);
+        $this->repository = $this->entityManager->getRepository(WorkUnitEntity::class);
     }
 
     public static function getSubscribedEvents(): array
     {
         return [
-            WorkUnitEvent::PARAMETERS_SET => 'persistAndFlush',
+            WorkUnitEvent::POST_CONFIGURE => 'persistAndFlush',
             WorkUnitEvent::STEP_STARTED => 'onStepStarted',
+            WorkUnitEvent::STARTED => 'persistAndFlush',
+            WorkUnitEvent::TERMINATED => 'persistAndFlush',
             WorkUnitEvent::CANCELLED => 'persistAndFlush',
             WorkUnitEvent::ERROR => 'persistAndFlush',
         ];
@@ -33,15 +40,21 @@ class JobSubscriber implements EventSubscriberInterface
 
     public function persistAndFlush(WorkUnitEvent $event): void
     {
-        $entity = $event->getWorkUnit()->toEntity();
+        $entity = $event->getWorkUnit()->getEntity();
         $this->entityManager->persist($entity);
         $this->entityManager->flush();
+        $this->cacheHelper->set(
+            $event->getWorkUnit()->getId(),
+            CacheHelper::KEY_STATUS,
+            $event->getWorkUnit()->getStatusValue(),
+        );
     }
 
     public function onStepStarted(WorkUnitEvent $event): void
     {
         $workUnit = $event->getWorkUnit();
-        $cancelled = $this->cacheHelper->get($workUnit->getId(), CacheHelper::KEY_IS_CANCELLED);
+        $cachedStatus = $this->cacheHelper->get($workUnit->getId(), CacheHelper::KEY_STATUS);
+        $cancelled = $cachedStatus && Status::is($cachedStatus, Status::CANCELLED);
         if ($cancelled === true) {
             $workUnit->cancel();
         }

@@ -3,7 +3,7 @@
 namespace Bnza\JobManagerBundle;
 
 use InvalidArgumentException;
-use Bnza\JobManagerBundle\Entity\Job as JobEntity;
+use Bnza\JobManagerBundle\Entity\WorkUnitEntity as JobEntity;
 
 class JobMetaFactory
 {

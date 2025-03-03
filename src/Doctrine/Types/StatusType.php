@@ -2,7 +2,7 @@
 
 namespace Bnza\JobManagerBundle\Doctrine\Types;
 
-use Bnza\JobManagerBundle\Status;
+use Bnza\JobManagerBundle\Entity\Status;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Types\Type;
 

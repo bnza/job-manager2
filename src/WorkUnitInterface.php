@@ -2,7 +2,7 @@
 
 namespace Bnza\JobManagerBundle;
 
-use Bnza\JobManagerBundle\Entity\Job as JobEntity;
+use Bnza\JobManagerBundle\Entity\WorkUnitEntity;
 use Symfony\Component\Uid\Uuid;
 
 interface WorkUnitInterface
@@ -21,17 +21,17 @@ interface WorkUnitInterface
      */
     public function run(): array|null;
 
-    public function configure(JobEntity $entity, ?JobInterface $parent = null): void;
+    public function configure(WorkUnitEntity $entity): void;
 
     public function setUp(): void;
 
     public function tearDown(): void;
 
-    public function toEntity(): JobEntity;
-
     public function getStepsCount(): int;
 
     public function getCurrentStepNumber(): int;
+
+    public function getStatusValue(): int;
 
     public function isIdle(): bool;
 

@@ -2,6 +2,8 @@
 
 namespace Bnza\JobManagerBundle;
 
+use Bnza\JobManagerBundle\DependencyInjection\Compiler\JobCacheHelperCompilerClass;
+use Bnza\JobManagerBundle\DependencyInjection\Compiler\JobEntityManagerCompilerClass;
 use Bnza\JobManagerBundle\DependencyInjection\Compiler\JobServicesIdLocatorCompilerPass;
 use Symfony\Component\Config\Definition\Configurator\DefinitionConfigurator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -21,15 +23,17 @@ class BnzaJobManagerBundle extends AbstractBundle
 
     public function loadExtension(array $config, ContainerConfigurator $container, ContainerBuilder $builder): void
     {
-        $container->import('../config/services.xml');
         $container->parameters()
-            ->set('bnza_job_manager.em_name', $config['em_name']);
+            ->set('bnza_job_manager.em_name', $config['em_name'])
+            ->set('bnza_job_manager.cache_pool_name', $config['cache_pool_name']);
+        $container->import('../config/services.xml');
     }
 
     public function build(ContainerBuilder $container): void
     {
         parent::build($container);
-//        $container->addCompilerPass(new AddTagsToAutoconfiguredServicesPass());
         $container->addCompilerPass(new JobServicesIdLocatorCompilerPass());
+        $container->addCompilerPass(new JobCacheHelperCompilerClass());
+        $container->addCompilerPass(new JobEntityManagerCompilerClass());
     }
 }

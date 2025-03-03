@@ -2,34 +2,34 @@
 
 namespace Bnza\JobManagerBundle;
 
-use Bnza\JobManagerBundle\Entity\Job as JobEntity;
+use Bnza\JobManagerBundle\Entity\Status;
+use Bnza\JobManagerBundle\Entity\WorkUnitEntity;
 use Bnza\JobManagerBundle\Event\WorkUnitEvent;
 use Bnza\JobManagerBundle\Exception\JobCancelledException;
 use InvalidArgumentException;
-use LogicException;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Uid\Uuid;
 
 abstract class AbstractWorkUnit implements WorkUnitInterface
 {
-    const WORK_UNIT_TYPE_JOB = 'job';
-    const WORK_UNIT_TYPE_TASK = 'task';
-
-    private ?Uuid $id = null;
-
-    protected ?JobInterface $parent = null;
-
-    protected array $parameters;
+    const string WORK_UNIT_TYPE_JOB = 'job';
+    const string WORK_UNIT_TYPE_TASK = 'task';
 
     protected int $currentStepNumber = -1;
 
     protected readonly EventDispatcherInterface $eventDispatcher;
-    private readonly Status $status;
+    protected WorkUnitEntity $state;
+
+    protected ?string $serviceId = null;
 
     public function __construct(EventDispatcherInterface $eventDispatcher)
     {
-        $this->status = new Status();
         $this->eventDispatcher = $eventDispatcher;
+        $this->state = new WorkUnitEntity()
+            ->setClass(static::class)
+            ->setName($this->getName())
+            ->setDescription($this->getDescription())
+            ->setStatus(new Status());
     }
 
     /**
@@ -46,22 +46,24 @@ abstract class AbstractWorkUnit implements WorkUnitInterface
 
     public function getId(): ?Uuid
     {
-        return $this->id;
+        return $this->state->getId();
     }
 
-    public function configure(JobEntity $entity, ?JobInterface $parent = null): void
+    public function configure(WorkUnitEntity $entity): void
     {
         $event = new WorkUnitEvent($this);
         $this->eventDispatcher->dispatch($event, WorkUnitEvent::PRE_CONFIGURE);
-        if (!is_null($this->id)) {
-            throw new LogicException('WorkUnit has already been configured.');
-        }
-        $this->id = $entity->getId();
+
         $this->validateParameters($entity->getParameters());
-        $this->parameters = $entity->getParameters();
-        if ($parent) {
-            $this->parent = $parent;
+        if (is_null($entity->getId())) {
+            $this->state
+                ->setService($entity->getService())
+                ->setParent($entity->getParent())
+                ->setParameters($entity->getParameters());
+        } else {
+            $this->state = $entity;
         }
+
         $this->eventDispatcher->dispatch($event, WorkUnitEvent::POST_CONFIGURE);
     }
 
@@ -77,13 +79,9 @@ abstract class AbstractWorkUnit implements WorkUnitInterface
     {
     }
 
-    public function toEntity(): JobEntity
+    public function getEntity(): WorkUnitEntity
     {
-        return new JobEntity($this->id)
-            ->setClass(static::class)
-            ->setName($this->getName())
-            ->setDescription($this->getDescription())
-            ->setStatus($this->status);
+        return $this->state;
     }
 
     public function getCurrentStepNumber(): int
@@ -91,34 +89,39 @@ abstract class AbstractWorkUnit implements WorkUnitInterface
         return $this->currentStepNumber;
     }
 
+    public function getStatusValue(): int
+    {
+        return $this->state->getStatus()->getValue();
+    }
+
     public function isIdle(): bool
     {
-        return $this->status->isIdle();
+        return $this->state->getStatus()->isIdle();
     }
 
     public function isRunning(): bool
     {
-        return $this->status->isRunning();
+        return $this->state->getStatus()->isRunning();
     }
 
     public function isCancelled(): bool
     {
-        return $this->status->isCancelled();
+        return $this->state->getStatus()->isCancelled();
     }
 
     public function isError(): bool
     {
-        return $this->status->isError();
+        return $this->state->getStatus()->isError();
     }
 
     public function isSuccess(): bool
     {
-        return $this->status->isSuccess();
+        return $this->state->getStatus()->isSuccess();
     }
 
     public function cancel(): void
     {
-        $this->status->cancel();
+        $this->state->getStatus()->cancel();
         $this->eventDispatcher->dispatch(new WorkUnitEvent($this), WorkUnitEvent::CANCELLED);
         throw new JobCancelledException();
     }
