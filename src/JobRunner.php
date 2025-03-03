@@ -9,6 +9,7 @@ use Doctrine\ORM\OptimisticLockException;
 use Doctrine\Persistence\ManagerRegistry;
 use Doctrine\Persistence\ObjectManager;
 use InvalidArgumentException;
+use Psr\Cache\CacheItemPoolInterface;
 use RuntimeException;
 use Symfony\Component\DependencyInjection\Attribute\AutowireLocator;
 use Symfony\Component\Uid\Uuid;
@@ -21,7 +22,8 @@ final readonly class JobRunner
     public function __construct(
         private ManagerRegistry $registry,
         string $emName,
-        private JobServicesIdLocator $locator
+        private JobServicesIdLocator $locator,
+        private CacheItemPoolInterface $redisCache
     ) {
         $this->entityManager = $this->registry->getManager($emName);
     }
@@ -32,6 +34,7 @@ final readonly class JobRunner
      */
     public function run(Uuid $id): void
     {
+        $rr = (string)$id;
         $entity = $this->entityManager->find(JobEntity::class, $id);
         if (null === $entity) {
             throw new InvalidArgumentException("Job '$id' not found.");
@@ -47,6 +50,10 @@ final readonly class JobRunner
         if (!($job instanceof JobInterface)) {
             throw new RuntimeException("Job '$id' must implement JobInterface.");
         }
+
+        $redisKey = sprintf('job.%s', $id->toString());
+        $item = $this->redisCache->getItem($redisKey);
+        $r = $item->get();
 
         $job->configure($entity);
         $job->run();

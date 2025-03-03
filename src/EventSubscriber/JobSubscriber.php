@@ -2,23 +2,21 @@
 
 namespace Bnza\JobManagerBundle\EventSubscriber;
 
-use Bnza\JobManagerBundle\Event\JobEvent;
-use Doctrine\ORM\EntityManagerInterface;
+use Bnza\JobManagerBundle\CacheHelper;
+use Bnza\JobManagerBundle\Event\WorkUnitEvent;
+use Bnza\JobManagerBundle\Exception\JobCancelledException;
 use Doctrine\Persistence\ManagerRegistry;
 use Doctrine\Persistence\ObjectManager;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
-use Symfony\Component\Validator\Exception\ValidationFailedException;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class JobSubscriber implements EventSubscriberInterface
 {
     private ObjectManager $entityManager;
 
     public function __construct(
-        private ManagerRegistry $registry,
+        private readonly ManagerRegistry $registry,
         private readonly string $emName,
-        private ValidatorInterface $validator
+        private readonly CacheHelper $cacheHelper
     ) {
         $this->entityManager = $this->registry->getManager($this->emName);
     }
@@ -26,33 +24,31 @@ class JobSubscriber implements EventSubscriberInterface
     public static function getSubscribedEvents(): array
     {
         return [
-//            JobEvent::CREATED => 'onJobCreated',
-            JobEvent::PARAMETERS_SET => 'persistAndFlush',
+            WorkUnitEvent::PARAMETERS_SET => 'persistAndFlush',
+            WorkUnitEvent::STEP_STARTED => 'onStepStarted',
+            WorkUnitEvent::CANCELLED => 'persistAndFlush',
+            WorkUnitEvent::ERROR => 'persistAndFlush',
         ];
     }
 
-    public function onJobCreated(JobEvent $event): void
+    public function persistAndFlush(WorkUnitEvent $event): void
     {
-        $job = $event->getJob();
-        $entity = $job->toEntity();
-        if (is_null($entity->getId())) {
-            // Entity ha not been persisted yet
-            $violations = $this->validator->validate($entity);
-            if (count($violations) > 0) {
-                throw new ValidationFailedException('User data validation failed', $violations);
-            }
-            $this->entityManager->persist($entity);
-            $this->entityManager->flush();
-        } else {
-            $this->entityManager->refresh($entity);
-            $job->setParameters($entity->getParameters(), false);
-        }
-    }
-
-    public function persistAndFlush(JobEvent $event): void
-    {
-        $entity = $event->getJob()->toEntity();
+        $entity = $event->getWorkUnit()->toEntity();
         $this->entityManager->persist($entity);
         $this->entityManager->flush();
+    }
+
+    public function onStepStarted(WorkUnitEvent $event): void
+    {
+        $workUnit = $event->getWorkUnit();
+        $cancelled = $this->cacheHelper->get($workUnit->getId(), CacheHelper::KEY_IS_CANCELLED);
+        if ($cancelled === true) {
+            $workUnit->cancel();
+        }
+        $this->cacheHelper->set(
+            $workUnit->getId(),
+            CacheHelper::KEY_CURRENT_STEP_NUMBER,
+            $workUnit->getCurrentStepNumber()
+        );
     }
 }

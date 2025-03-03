@@ -3,6 +3,8 @@
 namespace Bnza\JobManagerBundle;
 
 use Bnza\JobManagerBundle\Entity\Job as JobEntity;
+use Bnza\JobManagerBundle\Event\WorkUnitEvent;
+use Bnza\JobManagerBundle\Exception\JobCancelledException;
 use InvalidArgumentException;
 use LogicException;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
@@ -49,6 +51,8 @@ abstract class AbstractWorkUnit implements WorkUnitInterface
 
     public function configure(JobEntity $entity, ?JobInterface $parent = null): void
     {
+        $event = new WorkUnitEvent($this);
+        $this->eventDispatcher->dispatch($event, WorkUnitEvent::PRE_CONFIGURE);
         if (!is_null($this->id)) {
             throw new LogicException('WorkUnit has already been configured.');
         }
@@ -58,6 +62,7 @@ abstract class AbstractWorkUnit implements WorkUnitInterface
         if ($parent) {
             $this->parent = $parent;
         }
+        $this->eventDispatcher->dispatch($event, WorkUnitEvent::POST_CONFIGURE);
     }
 
     public function rollback(): void
@@ -114,8 +119,7 @@ abstract class AbstractWorkUnit implements WorkUnitInterface
     public function cancel(): void
     {
         $this->status->cancel();
-        $this->status->error();
-        $this->rollback();
-        $this->parent?->cancel();
+        $this->eventDispatcher->dispatch(new WorkUnitEvent($this), WorkUnitEvent::CANCELLED);
+        throw new JobCancelledException();
     }
 }

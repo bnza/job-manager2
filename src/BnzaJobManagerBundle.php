@@ -12,7 +12,11 @@ class BnzaJobManagerBundle extends AbstractBundle
 {
     public function configure(DefinitionConfigurator $definition): void
     {
-        $definition->rootNode()->children()->stringNode('em_name')->defaultValue('bnza_job_manager')->end();
+        $definition
+            ->rootNode()
+            ->children()
+            ->stringNode('em_name')->defaultValue('bnza_job_manager')->end()
+            ->stringNode('cache_pool_name')->defaultValue('redis.cache')->end();
     }
 
     public function loadExtension(array $config, ContainerConfigurator $container, ContainerBuilder $builder): void

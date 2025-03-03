@@ -3,6 +3,8 @@
 namespace Bnza\JobManagerBundle;
 
 
+use Bnza\JobManagerBundle\Event\WorkUnitEvent;
+use Exception;
 use InvalidArgumentException;
 use SplQueue;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
@@ -38,15 +40,31 @@ abstract class AbstractJob extends AbstractWorkUnit implements JobInterface
 
     public final function run(): array
     {
+        $event = new WorkUnitEvent($this);
+        $this->eventDispatcher->dispatch($event, WorkUnitEvent::SETUP);
         $this->setUp();
-        foreach ($this->workUnits as /** @var WorkUnitInterface $workUnit */ $workUnit) {
-            $entity = $workUnit->toEntity()->setParameters($this->parameters);
-            $workUnit->configure($entity, $this);
-            $workUnitResults = $workUnit->run();
-            $this->parameters = array_merge($this->parameters, $workUnitResults);
-            $this->completedWorkUnits[] = $workUnit;
+        $this->eventDispatcher->dispatch($event, WorkUnitEvent::STARTED);
+        try {
+            foreach ($this->workUnits as /** @var WorkUnitInterface $workUnit */ $workUnit) {
+                ++$this->currentStepNumber;
+                $entity = $workUnit->toEntity()->setParameters($this->parameters);
+                $workUnit->configure($entity, $this);
+                $this->eventDispatcher->dispatch($event, WorkUnitEvent::STEP_STARTED);
+                $workUnitResults = $workUnit->run();
+                $this->parameters = array_merge($this->parameters, $workUnitResults);
+                $this->eventDispatcher->dispatch($event, WorkUnitEvent::STEP_TERMINATED);
+                $this->completedWorkUnits[] = $workUnit;
+            }
+            $this->eventDispatcher->dispatch($event, WorkUnitEvent::SUCCESS);
+            $this->tearDown();
+            $this->eventDispatcher->dispatch($event, WorkUnitEvent::TEARDOWN);
+        } catch (Exception $e) {
+            $this->eventDispatcher->dispatch($event, WorkUnitEvent::ERROR);
+            $this->rollback();
+            $this->eventDispatcher->dispatch($event, WorkUnitEvent::ROLLBACK);
+            throw $e;
         }
-        $this->tearDown();
+        $this->eventDispatcher->dispatch($event, WorkUnitEvent::TERMINATED);
 
         return $this->returnParameters();
     }
@@ -54,7 +72,7 @@ abstract class AbstractJob extends AbstractWorkUnit implements JobInterface
     public function rollback(): void
     {
         for ($i = count($this->completedWorkUnits) - 1; $i >= 0; $i--) {
-            $this->workUnits[$i]->rollback();
+            $this->completedWorkUnits[$i]->rollback();
         }
     }
 
