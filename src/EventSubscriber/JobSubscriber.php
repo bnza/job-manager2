@@ -38,10 +38,19 @@ class JobSubscriber implements EventSubscriberInterface
         ];
     }
 
+    private function getEntityManager(): ObjectManager
+    {
+        if (!$this->entityManager->isOpen()) {
+            $this->entityManager = $this->registry->resetManager($this->emName);
+        }
+
+        return $this->entityManager;
+    }
+
     public function persistAndFlush(WorkUnitEvent $event): void
     {
         $entity = $event->getWorkUnit()->getEntity();
-        $this->entityManager->persist($entity);
+        $this->getEntityManager()->persist($entity);
         $this->entityManager->flush();
         $this->cacheHelper->set(
             $event->getWorkUnit()->getId(),

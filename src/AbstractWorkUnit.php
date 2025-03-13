@@ -32,12 +32,12 @@ abstract class AbstractWorkUnit implements WorkUnitInterface
             ->setStatus(new Status());
     }
 
-    /**
-     * @param array $params
-     * @return void
-     * @throws InvalidArgumentException
-     */
-    abstract protected function validateParameters(array $params): void;
+//    /**
+//     * @param array $params
+//     * @return void
+//     * @throws InvalidArgumentException
+//     */
+//    abstract protected function validateParameters(array $params): void;
 
     /**
      * @return array<string, mixed>
@@ -54,7 +54,7 @@ abstract class AbstractWorkUnit implements WorkUnitInterface
         $event = new WorkUnitEvent($this);
         $this->eventDispatcher->dispatch($event, WorkUnitEvent::PRE_CONFIGURE);
 
-        $this->validateParameters($entity->getParameters());
+//        $this->validateParameters($entity->getParameters());
         if (is_null($entity->getId())) {
             $this->state
                 ->setService($entity->getService())
@@ -124,5 +124,14 @@ abstract class AbstractWorkUnit implements WorkUnitInterface
         $this->state->getStatus()->cancel();
         $this->eventDispatcher->dispatch(new WorkUnitEvent($this), WorkUnitEvent::CANCELLED);
         throw new JobCancelledException();
+    }
+
+    protected function getParameter(string $key): mixed
+    {
+        if (!isset($this->parameters[$key])) {
+            throw new InvalidArgumentException(sprintf('Parameter "%s" does not exist.', $key));
+        }
+
+        return $this->parameters[$key];
     }
 }

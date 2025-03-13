@@ -64,19 +64,19 @@ abstract class AbstractJob extends AbstractWorkUnit implements JobInterface
                 $this->eventDispatcher->dispatch($event, WorkUnitEvent::STEP_TERMINATED);
                 $this->completedWorkUnits[] = $workUnit;
             }
+            $this->tearDown();
             $this->state->getStatus()->success();
             $this->eventDispatcher->dispatch($event, WorkUnitEvent::SUCCESS);
-            $this->tearDown();
-            $this->eventDispatcher->dispatch($event, WorkUnitEvent::TEARDOWN);
         } catch (Exception $e) {
             $this->state->getStatus()->error();
             $this->eventDispatcher->dispatch($event, WorkUnitEvent::ERROR);
             $this->rollback();
             $this->eventDispatcher->dispatch($event, WorkUnitEvent::ROLLBACK);
             throw $e;
+        } finally {
+            $this->state->setTerminatedAt(microtime(true));
+            $this->eventDispatcher->dispatch($event, WorkUnitEvent::TERMINATED);
         }
-        $this->state->setTerminatedAt(microtime(true));
-        $this->eventDispatcher->dispatch($event, WorkUnitEvent::TERMINATED);
 
         return $this->returnParameters();
     }

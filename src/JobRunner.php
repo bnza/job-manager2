@@ -7,6 +7,7 @@ use Doctrine\ORM\Exception\ORMException;
 use Doctrine\ORM\OptimisticLockException;
 use Doctrine\Persistence\ManagerRegistry;
 use Doctrine\Persistence\ObjectManager;
+use Exception;
 use InvalidArgumentException;
 use RuntimeException;
 use Symfony\Component\Uid\Uuid;
@@ -42,7 +43,7 @@ final readonly class JobRunner
         if (!$entity->getStatus()->isIdle()) {
             throw new RuntimeException("Only idling jobs can be run: '$id' is not");
         }
-       
+
         $serviceId = $entity->getService();
         if (!$this->locator->has($serviceId)) {
             throw new RuntimeException("Service \"$serviceId\" not found.");
@@ -54,7 +55,11 @@ final readonly class JobRunner
             throw new RuntimeException("WorkUnitEntity '$id' must implement JobInterface.");
         }
 
-        $job->configure($entity);
-        $job->run();
+        try {
+            $job->configure($entity);
+            $job->run();
+        } catch (Exception $e) {
+            throw new RuntimeException($e->getMessage());
+        }
     }
 }

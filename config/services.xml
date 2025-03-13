@@ -69,6 +69,10 @@
             <tag name="api_platform.state_provider"/>
         </service>
         <service id="bnza_job_manager.work_unit_item_provider" alias="Bnza\JobManagerBundle\State\WorkUnitItemProvider"/>
+        <service id="bnza_job_manager.job_runner_message_handler" class="Bnza\JobManagerBundle\MessageHandler\JobRunnerMessageHandler">
+            <argument type="service" id="bnza_job_manager.job_runner"/>
+            <tag name="messenger.message_handler"/>
+        </service>
     </services>
 
 </container>
