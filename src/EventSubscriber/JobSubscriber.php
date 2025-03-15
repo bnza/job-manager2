@@ -12,18 +12,15 @@ use Doctrine\Persistence\ObjectRepository;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\Uid\Uuid;
 
-class JobSubscriber implements EventSubscriberInterface
+class JobSubscriber extends AbstractJobSubscriber
 {
-    private ObjectManager $entityManager;
-    private ObjectRepository $repository;
 
     public function __construct(
-        private readonly ManagerRegistry $registry,
-        private readonly string $emName,
+        ManagerRegistry $registry,
+        string $emName,
         private readonly CacheHelper $cacheHelper
     ) {
-        $this->entityManager = $this->registry->getManager($this->emName);
-        $this->repository = $this->entityManager->getRepository(WorkUnitEntity::class);
+        parent::__construct($registry, $emName);
     }
 
     public static function getSubscribedEvents(): array
@@ -39,14 +36,6 @@ class JobSubscriber implements EventSubscriberInterface
         ];
     }
 
-    private function getEntityManager(): ObjectManager
-    {
-        if (!$this->entityManager->isOpen()) {
-            $this->entityManager = $this->registry->resetManager($this->emName);
-        }
-
-        return $this->entityManager;
-    }
 
     public function persistAndFlush(WorkUnitEvent $event): void
     {

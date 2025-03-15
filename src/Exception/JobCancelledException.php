@@ -2,15 +2,26 @@
 
 namespace Bnza\JobManagerBundle\Exception;
 
-use Bnza\JobManagerBundle\Entity\WorkUnitEntity;
 use RuntimeException;
+use Symfony\Component\Uid\Uuid;
 use Throwable;
 
-class JobCancelledException extends RuntimeException
+class JobCancelledException extends RuntimeException implements JobExceptionInterface
 {
-    public function __construct(string $message = "", int $code = 0, Throwable $previous = null)
+    public function __construct(private Uuid $id, int $code = 0, ?Throwable $previous = null)
     {
-        parent::__construct("WorkUnitEntity cancelled by user action", $code, $previous);
+        $this->message = "Job \"$id\" cancelled by user action.";
+        parent::__construct($this->message, $code, $previous);
+    }
+
+    public function getJobId(): Uuid
+    {
+        return $this->id;
+    }
+
+    public function getValues(): array
+    {
+        return [];
     }
 
 }

@@ -55,11 +55,7 @@ final readonly class JobRunner
             throw new RuntimeException("WorkUnitEntity '$id' must implement JobInterface.");
         }
 
-        try {
-            $job->configure($entity);
-            $job->run();
-        } catch (Exception $e) {
-            throw new RuntimeException($e->getMessage());
-        }
+        $job->configure($entity);
+        $job->run();
     }
 }

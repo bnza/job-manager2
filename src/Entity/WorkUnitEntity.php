@@ -32,7 +32,10 @@ class WorkUnitEntity
     #[Groups("Bnza:WorkUnit:read")]
     private ?float $terminatedAt;
     private ?WorkUnitEntity $parent;
+    #[Groups("Bnza:WorkUnit:read")]
     private Collection $children;
+    #[Groups("Bnza:WorkUnit:read")]
+    private Collection $errors;
 
     public function __construct()
     {
@@ -226,4 +229,33 @@ class WorkUnitEntity
 
         return $this;
     }
+
+    public function getErrors(): Collection
+    {
+        return $this->errors;
+    }
+
+    public function addError(WorkUnitErrorEntity $error): self
+    {
+        if (!$this->errors->contains($error)) {
+            $this->errors[] = $error;
+            $error->setWorkUnit($this);
+        }
+
+        return $this;
+    }
+
+    public function removeError(WorkUnitErrorEntity $error): self
+    {
+        if ($this->errors->removeElement($error)) {
+            // set the owning side to null (unless already changed)
+            if ($error->getWorkUnit() === $this) {
+                $error->setWorkUnit(null);
+            }
+        }
+
+        return $this;
+    }
+
+
 }

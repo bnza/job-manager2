@@ -30,6 +30,11 @@
             <tag name="doctrine.repository"/>
         </service>
 
+        <service id="bnza_job_manager.job_error_repository" class="Bnza\JobManagerBundle\Repository\JobErrorRepository" public="false">
+            <argument type="service" id="%bnza_job_manager.em_id%"/>
+            <tag name="doctrine.repository"/>
+        </service>
+
         <service id="bnza_job_manager.job_locator" class="Bnza\JobManagerBundle\JobServicesIdLocator"/>
 
         <service id="bnza_job_manager.job_runner" class="Bnza\JobManagerBundle\JobRunner">
@@ -38,12 +43,33 @@
             <argument key="$locator" type="service" id="bnza_job_manager.job_locator"/>
         </service>
 
-        <service id="bnza_job_manager.job_event_subscriber" class="Bnza\JobManagerBundle\EventSubscriber\JobSubscriber" public="false">
+        <service id="bnza_job_manager.abstract_job_event_subscriber"
+            class="Bnza\JobManagerBundle\EventSubscriber\JobSubscriber"
+            public="false"
+            abstract="true"
+        >
             <argument key="$registry" type="service" id="doctrine"/>
             <argument key="$emName" type="string">%bnza_job_manager.em_name%</argument>
+        </service>
+
+        <service id="bnza_job_manager.job_event_subscriber"
+            class="Bnza\JobManagerBundle\EventSubscriber\JobSubscriber"
+            public="false"
+            parent="bnza_job_manager.abstract_job_event_subscriber"
+        >
             <argument key="$cacheHelper" type="service" id="bnza_job_manager.cache_helper"/>
             <tag name="kernel.event_subscriber" lazy="true"/>
         </service>
+
+        <service
+            id="bnza_job_manager.job_error_event_subscriber"
+            class="Bnza\JobManagerBundle\EventSubscriber\JobErrorSubscriber"
+            public="false"
+            parent="bnza_job_manager.abstract_job_event_subscriber"
+        >
+            <tag name="kernel.event_subscriber" lazy="true"/>
+        </service>
+
 
         <service id="bnza_job_manager.abstract_work_unit" class="Bnza\JobManagerBundle\AbstractWorkUnit" abstract="true" shared="false">
             <argument key="$eventDispatcher" type="service" id="event_dispatcher"/>

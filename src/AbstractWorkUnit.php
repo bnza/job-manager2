@@ -111,11 +111,14 @@ abstract class AbstractWorkUnit implements WorkUnitInterface
         return $this->state->getStatus()->isSuccess();
     }
 
+    /**
+     * @throws JobCancelledException
+     */
     public function cancel(): void
     {
         $this->state->getStatus()->cancel();
         $this->eventDispatcher->dispatch(new WorkUnitEvent($this), WorkUnitEvent::CANCELLED);
-        throw new JobCancelledException();
+        throw new JobCancelledException($this->getId());
     }
 
     protected function getParameter(string $key): mixed
