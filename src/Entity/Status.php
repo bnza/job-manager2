@@ -19,7 +19,7 @@ class Status
     const string RUNNING_TEXT = 'running';
     const string CANCELLED_TEXT = 'cancelled';
 
-    #[Groups("public")]
+    #[Groups("Bnza:WorkUnit:read")]
     public function getValue(): int
     {
         return $this->value;

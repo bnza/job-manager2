@@ -32,9 +32,10 @@ class JobSubscriber implements EventSubscriberInterface
             WorkUnitEvent::POST_CONFIGURE => 'persistAndFlush',
             WorkUnitEvent::STEP_STARTED => 'onStepStarted',
             WorkUnitEvent::STARTED => 'persistAndFlush',
-            WorkUnitEvent::TERMINATED => 'persistAndFlush',
+            WorkUnitEvent::SUCCESS => 'persistAndFlush',
             WorkUnitEvent::CANCELLED => 'persistAndFlush',
             WorkUnitEvent::ERROR => 'persistAndFlush',
+            WorkUnitEvent::TERMINATED => 'persistAndFlush',
         ];
     }
 

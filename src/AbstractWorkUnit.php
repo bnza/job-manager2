@@ -32,13 +32,6 @@ abstract class AbstractWorkUnit implements WorkUnitInterface
             ->setStatus(new Status());
     }
 
-//    /**
-//     * @param array $params
-//     * @return void
-//     * @throws InvalidArgumentException
-//     */
-//    abstract protected function validateParameters(array $params): void;
-
     /**
      * @return array<string, mixed>
      */
@@ -54,7 +47,6 @@ abstract class AbstractWorkUnit implements WorkUnitInterface
         $event = new WorkUnitEvent($this);
         $this->eventDispatcher->dispatch($event, WorkUnitEvent::PRE_CONFIGURE);
 
-//        $this->validateParameters($entity->getParameters());
         if (is_null($entity->getId())) {
             $this->state
                 ->setService($entity->getService())

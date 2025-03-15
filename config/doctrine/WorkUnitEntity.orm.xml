@@ -21,7 +21,9 @@
             </options>
         </field>
         <field name="stepsCount" type="smallint"/>
-        <embedded name="status" class="Bnza\JobManagerBundle\Entity\Status"/>
+        <embedded name="status" class="Bnza\JobManagerBundle\Entity\Status" column-prefix="status_">
+            <field name="value" type="integer"/>
+        </embedded>
         <field name="startedAt" type="microtime" nullable="true"/>
         <field name="terminatedAt" type="microtime" nullable="true"/>
         <many-to-one field="parent" target-entity="WorkUnitEntity" inversed-by="children">

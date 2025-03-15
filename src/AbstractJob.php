@@ -61,7 +61,7 @@ abstract class AbstractJob extends AbstractWorkUnit implements JobInterface
                 $this->eventDispatcher->dispatch($event, WorkUnitEvent::STEP_STARTED);
                 $workUnitResults = $workUnit->run();
                 $this->state->setParameters(array_merge($this->state->getParameters(), $workUnitResults));
-                $this->eventDispatcher->dispatch($event, WorkUnitEvent::STEP_TERMINATED);
+//                $this->eventDispatcher->dispatch($event, WorkUnitEvent::STEP_TERMINATED);
                 $this->completedWorkUnits[] = $workUnit;
             }
             $this->tearDown();
