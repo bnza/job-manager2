@@ -92,11 +92,21 @@
             <argument key="$entityManager" type="service" id="%bnza_job_manager.em_id%"/>
             <argument key="$cache" type="service" id="bnza_job_manager.cache_helper"/>
             <argument key="$denormalizer" type="service" id="serializer"/>
+            <argument key="$security" type="service" id="security.helper"/>
             <tag name="api_platform.state_provider"/>
         </service>
-        <service id="bnza_job_manager.work_unit_item_provider" alias="Bnza\JobManagerBundle\State\WorkUnitItemProvider"/>
+        <service id="Bnza\JobManagerBundle\State\WorkUnitCollectionProvider" class="Bnza\JobManagerBundle\State\WorkUnitCollectionProvider"
+            lazy="true">
+            <argument key="$entityManager" type="service" id="%bnza_job_manager.em_id%"/>
+            <argument key="$security" type="service" id="security.helper"/>
+            <!--            <argument key="$requestStack" type="service" id="request_stack"/>-->
+            <tag name="api_platform.state_provider"/>
+        </service>
+        <!--        <service id="bnza_job_manager.work_unit_item_provider" alias="Bnza\JobManagerBundle\State\WorkUnitItemProvider"/>-->
         <service id="bnza_job_manager.job_runner_message_handler" class="Bnza\JobManagerBundle\MessageHandler\JobRunnerMessageHandler">
-            <argument type="service" id="bnza_job_manager.job_runner"/>
+            <argument key="$runner" type="service" id="bnza_job_manager.job_runner"/>
+            <argument key="$tokenStorage" type="service" id="security.token_storage"/>
+            <argument key="$userProvider" type="service" id="Symfony\Component\Security\Core\User\UserProviderInterface"/>
             <tag name="messenger.message_handler"/>
         </service>
     </services>

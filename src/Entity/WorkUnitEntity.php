@@ -22,6 +22,8 @@ class WorkUnitEntity
     #[Groups("Bnza:WorkUnit:read")]
     private string $description;
 
+    private ?string $userId;
+
     private array $parameters;
     #[Groups("Bnza:WorkUnit:read")]
     private int $stepsCount = 0;
@@ -252,6 +254,27 @@ class WorkUnitEntity
             if ($error->getWorkUnit() === $this) {
                 $error->setWorkUnit(null);
             }
+        }
+
+        return $this;
+    }
+
+    public function getUserId(): ?string
+    {
+        return $this->userId;
+    }
+
+    public function setUserId(?string $userId): WorkUnitEntity
+    {
+        $this->userId = $userId;
+
+        return $this;
+    }
+
+    public function getRoot(): static
+    {
+        if (!is_null($this->parent)) {
+            return $this->parent->getRoot();
         }
 
         return $this;

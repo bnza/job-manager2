@@ -2,16 +2,18 @@
 
 namespace Bnza\JobManagerBundle\State;
 
-use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProviderInterface;
 use Bnza\JobManagerBundle\CacheHelper;
-use Bnza\JobManagerBundle\Entity\Status;
 use Bnza\JobManagerBundle\Entity\WorkUnitEntity;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Exception\ORMException;
+use Doctrine\ORM\OptimisticLockException;
 use InvalidArgumentException;
+use Psr\Log\LoggerInterface;
+use Symfony\Bundle\SecurityBundle\Security;
+use Symfony\Component\Serializer\Exception\ExceptionInterface;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
-use Symfony\Component\Uid\Uuid;
 
 class WorkUnitItemProvider implements ProviderInterface
 {
@@ -19,31 +21,30 @@ class WorkUnitItemProvider implements ProviderInterface
         private readonly EntityManagerInterface $entityManager,
         private readonly CacheHelper $cache,
         private readonly DenormalizerInterface $denormalizer,
+        private readonly Security $security,
     ) {
 
     }
 
+    /**
+     * @throws ExceptionInterface
+     * @throws OptimisticLockException
+     * @throws ORMException
+     */
     public function provide(Operation $operation, array $uriVariables = [], array $context = []): object|array|null
     {
-        if (!($operation instanceof Get)) {
-            throw new InvalidArgumentException("Operation accepts only Get");
-        }
         if (!array_key_exists("id", $uriVariables)) {
             throw new InvalidArgumentException("Missing 'id' parameter");
         }
         $id = $uriVariables["id"];
 
-        $item = $this->cache->get($id);
-        if (!is_null($item)) {
-            $_item = array_merge([],
-                $item,
-                ['id' => new Uuid($item['id']), 'status' => new Status($item['status']['value'])]);
-            $entity = $this->denormalizer->denormalize($_item, WorkUnitEntity::class, null);
+        $workUnit = $this->entityManager->find(WorkUnitEntity::class, $id);
 
-            return $entity;
+        if (!is_null($workUnit) && !$this->security->isGranted('ROLE_ADMIN')) {
+            $userId = $this->security->getToken()->getUser()->getUserIdentifier();
+            $workUnit = $workUnit->getUserId() === $userId ? $workUnit : null;
         }
 
-        return $this->entityManager->find(WorkUnitEntity::class, $id);
-
+        return $workUnit;
     }
 }

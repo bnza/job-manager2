@@ -13,6 +13,7 @@
             <custom-id-generator class="Symfony\Bridge\Doctrine\IdGenerator\UuidGenerator"/>
         </id>
         <field name="name"/>
+        <field name="userId" nullable="true" column="user_id"/>
         <field name="class"/>
         <field name="service"/>
         <field name="parameters" type="json" nullable="true">
@@ -20,12 +21,12 @@
                 <option name="jsonb">true</option>
             </options>
         </field>
-        <field name="stepsCount" type="smallint"/>
+        <field name="stepsCount" type="smallint" column="steps_count"/>
         <embedded name="status" class="Bnza\JobManagerBundle\Entity\Status" column-prefix="status_">
             <field name="value" type="integer"/>
         </embedded>
-        <field name="startedAt" type="microtime" nullable="true"/>
-        <field name="terminatedAt" type="microtime" nullable="true"/>
+        <field name="startedAt" column="started_at" type="microtime" nullable="true"/>
+        <field name="terminatedAt" column="terminated_at" type="microtime" nullable="true"/>
         <many-to-one field="parent" target-entity="WorkUnitEntity" inversed-by="children">
             <join-column name="parent_id" on-delete="CASCADE"/>
         </many-to-one>
