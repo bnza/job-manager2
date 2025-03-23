@@ -2,7 +2,9 @@
 
 namespace Bnza\JobManagerBundle;
 
-interface WorkerInterface extends ConfigurableInterface
+use Symfony\Contracts\Service\ResetInterface;
+
+interface WorkerInterface extends ConfigurableInterface, ResetInterface
 {
     public function getSteps(): iterable;
 

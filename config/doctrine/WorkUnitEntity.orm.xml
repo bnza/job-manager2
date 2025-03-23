@@ -12,7 +12,6 @@
             <generator strategy="CUSTOM"/>
             <custom-id-generator class="Symfony\Bridge\Doctrine\IdGenerator\UuidGenerator"/>
         </id>
-        <field name="name"/>
         <field name="userId" nullable="true" column="user_id"/>
         <field name="class"/>
         <field name="service"/>
@@ -22,6 +21,7 @@
             </options>
         </field>
         <field name="stepsCount" type="smallint" column="steps_count"/>
+        <field name="currentStepNumber" type="smallint" column="current_step_num" nullable="true"/>
         <embedded name="status" class="Bnza\JobManagerBundle\Entity\Status" column-prefix="status_">
             <field name="value" type="integer"/>
         </embedded>

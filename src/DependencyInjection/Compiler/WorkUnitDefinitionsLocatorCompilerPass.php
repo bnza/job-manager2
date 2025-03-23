@@ -2,17 +2,17 @@
 
 namespace Bnza\JobManagerBundle\DependencyInjection\Compiler;
 
-use Bnza\JobManagerBundle\JobServicesIdLocator;
+use Bnza\JobManagerBundle\WorkUnitDefinitionServiceLocator;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
 
-class JobServicesIdLocatorCompilerPass implements CompilerPassInterface
+class WorkUnitDefinitionsLocatorCompilerPass implements CompilerPassInterface
 {
     public function process(ContainerBuilder $container): void
     {
-        $definition = $container->getDefinition('bnza_job_manager.job_locator');
-        $taggedServices = $container->findTaggedServiceIds('bnza_job_manager.job');
+        $definition = $container->getDefinition(WorkUnitDefinitionServiceLocator::class);
+        $taggedServices = $container->findTaggedServiceIds('bnza_job_manager.work_unit_definition');
         $services = [];
 
         foreach ($taggedServices as $id => $tags) {
@@ -20,9 +20,9 @@ class JobServicesIdLocatorCompilerPass implements CompilerPassInterface
             if ($def->isAbstract()) {
                 continue;
             }
-            $services[$id] = new Reference($id);
+            $services[$def->getArgument('$service')] = new Reference($id);
         }
 
-        $definition->setArgument('$services', $services);
+        $definition->setArgument('$definitions', $services);
     }
 }

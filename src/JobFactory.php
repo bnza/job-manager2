@@ -2,7 +2,7 @@
 
 namespace Bnza\JobManagerBundle;
 
-interface TaskInterface
+class JobFactory
 {
 
 }

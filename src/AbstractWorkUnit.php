@@ -16,28 +16,23 @@ abstract class AbstractWorkUnit implements WorkUnitInterface
     const string WORK_UNIT_TYPE_JOB = 'job';
     const string WORK_UNIT_TYPE_TASK = 'task';
 
-    protected int $currentStepNumber = -1;
-
-    protected readonly EventDispatcherInterface $eventDispatcher;
     protected WorkUnitEntity $state;
 
-    protected ?string $serviceId = null;
-
     public function __construct(
-        EventDispatcherInterface $eventDispatcher,
-        protected readonly LoggerInterface $logger
+        protected readonly EventDispatcherInterface $eventDispatcher,
+        protected readonly LoggerInterface $logger,
+        protected readonly WorkUnitDefinition $definition
     ) {
-        $this->eventDispatcher = $eventDispatcher;
-        $this->reset();
+        // @todo use WorkUnitDefinition->toEntity()
+        $this->state = new WorkUnitEntity()
+            ->setClass(static::class)
+            ->setDescription($definition->getDescription())
+            ->setService($definition->getService())
+            ->setStatus(new Status());
     }
 
     public function reset(): void
     {
-        $this->state = new WorkUnitEntity()
-            ->setClass(static::class)
-            ->setName($this->getName())
-            ->setDescription($this->getDescription())
-            ->setStatus(new Status());
     }
 
     /**
@@ -50,6 +45,7 @@ abstract class AbstractWorkUnit implements WorkUnitInterface
         return $this->state->getId();
     }
 
+
     public function configure(WorkUnitEntity $entity): void
     {
         $event = new WorkUnitEvent($this);
@@ -58,7 +54,6 @@ abstract class AbstractWorkUnit implements WorkUnitInterface
         if (is_null($entity->getId())) {
             $this->logger->debug('Pippo: '.$this->state->getService());
             $this->state
-                ->setService($entity->getService())
                 ->setParent($entity->getParent())
                 ->setParameters($entity->getParameters());
         } else {
@@ -80,6 +75,21 @@ abstract class AbstractWorkUnit implements WorkUnitInterface
     {
     }
 
+    public function getDescription(): string
+    {
+        return $this->state->getDescription();
+    }
+
+    public function getService(): string
+    {
+        return $this->state->getService();
+    }
+
+    public function getClass(): string
+    {
+        return $this->state->getClass();
+    }
+
     public function getEntity(): WorkUnitEntity
     {
         return $this->state;
@@ -87,7 +97,7 @@ abstract class AbstractWorkUnit implements WorkUnitInterface
 
     public function getCurrentStepNumber(): int
     {
-        return $this->currentStepNumber;
+        return $this->state->getCurrentStepNumber();
     }
 
     public function getStatusValue(): int

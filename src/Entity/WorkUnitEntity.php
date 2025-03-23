@@ -15,8 +15,6 @@ class WorkUnitEntity
     #[Groups("Bnza:WorkUnit:read")]
     private ?Uuid $id = null;
     #[Groups("Bnza:WorkUnit:read")]
-    private string $name;
-    #[Groups("Bnza:WorkUnit:read")]
     private string $class;
     #[Groups("Bnza:WorkUnit:read")]
     private ?string $service = null;
@@ -25,16 +23,18 @@ class WorkUnitEntity
 
     private ?string $userId;
 
-    private array $parameters;
+    private array $parameters = [];
     #[Groups("Bnza:WorkUnit:read")]
     private int $stepsCount = 0;
+    #[Groups("Bnza:WorkUnit:read")]
+    private ?int $currentStepNumber = null;
     #[Groups("Bnza:WorkUnit:read")]
     private Status $status;
     #[Groups("Bnza:WorkUnit:read")]
     private ?float $startedAt;
     #[Groups("Bnza:WorkUnit:read")]
     private ?float $terminatedAt;
-    private ?WorkUnitEntity $parent;
+    private ?WorkUnitEntity $parent = null;
     #[Groups("Bnza:WorkUnit:read")]
     private Collection $children;
     #[Groups("Bnza:WorkUnit:read")]
@@ -56,21 +56,6 @@ class WorkUnitEntity
             throw new ReadOnlyPropertyException('id');
         }
         $this->id = $id;
-
-        return $this;
-    }
-
-    public function getName(): string
-    {
-        return $this->name;
-    }
-
-    public function setName(string $name): WorkUnitEntity
-    {
-        if (isset($this->name)) {
-            throw new ReadOnlyPropertyException('name');
-        }
-        $this->name = $name;
 
         return $this;
     }
@@ -139,6 +124,23 @@ class WorkUnitEntity
         return $this->status;
     }
 
+    public function getCurrentStepNumber(): ?int
+    {
+        return $this->currentStepNumber;
+    }
+
+    public function setCurrentStepNumber(?int $currentStepNum): WorkUnitEntity
+    {
+        $this->currentStepNumber = $currentStepNum;
+
+        return $this;
+    }
+
+    public function setNextStepNumber(): WorkUnitEntity
+    {
+        return $this->setCurrentStepNumber(is_null($this->currentStepNumber) ? 0 : ++$this->currentStepNumber);
+    }
+
     public function setStatus(Status $status): WorkUnitEntity
     {
         if (isset($this->status)) {
@@ -194,9 +196,9 @@ class WorkUnitEntity
         return $this->parent;
     }
 
-    public function setParent(?WorkUnitEntity $parent): WorkUnitEntity
+    public function setParent(?WorkUnitEntity $parent): ?WorkUnitEntity
     {
-        if (isset($this->parent)) {
+        if (!is_null($this->parent)) {
             throw new ReadOnlyPropertyException('parent');
         }
 

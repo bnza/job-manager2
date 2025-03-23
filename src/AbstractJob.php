@@ -6,7 +6,6 @@ namespace Bnza\JobManagerBundle;
 use Bnza\JobManagerBundle\Entity\WorkUnitEntity;
 use Bnza\JobManagerBundle\Event\WorkUnitEvent;
 use ErrorException;
-use Exception;
 use InvalidArgumentException;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
@@ -16,7 +15,7 @@ abstract class AbstractJob extends AbstractWorkUnit implements JobInterface
 {
 
 
-    /** @var array<string, WorkUnitInterface> */
+    /** @var array<string, WorkUnitFactoryInterface> */
     protected readonly array $workUnits;
 
     /** @var array<WorkUnitInterface> */
@@ -25,16 +24,17 @@ abstract class AbstractJob extends AbstractWorkUnit implements JobInterface
     public function __construct(
         EventDispatcherInterface $eventDispatcher,
         array $workUnits,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        WorkUnitDefinition $definition
     ) {
-        parent::__construct($eventDispatcher, $logger);
+        parent::__construct($eventDispatcher, $logger, $definition);
         $_workUnits = [];
         foreach ($workUnits as $id => $workUnit) {
-            if (!$workUnit instanceof WorkUnitInterface) {
+            if (!$workUnit instanceof WorkUnitFactoryInterface) {
                 throw new InvalidArgumentException(
                     sprintf(
                         'WorkUnit must implement %s: %s given',
-                        WorkUnitInterface::class,
+                        WorkUnitFactoryInterface::class,
                         get_class($workUnit)
                     )
                 );
@@ -59,15 +59,10 @@ abstract class AbstractJob extends AbstractWorkUnit implements JobInterface
                 [$this, 'handleError'],
                 E_ERROR | E_CORE_ERROR | E_COMPILE_ERROR | E_USER_ERROR | E_PARSE
             );
-            foreach ($this->workUnits as $serviceId => /** @var WorkUnitInterface $workUnit */ $workUnit) {
-                ++$this->currentStepNumber;
-                $entity = new WorkUnitEntity()
-                    ->setParameters($this->state->getParameters())
-                    ->setService($serviceId)
-                    ->setParent(
-                        $this->getEntity()
-                    );
-                $workUnit->configure($entity);
+            foreach ($this->workUnits as $serviceId => /** @var WorkUnitFactoryInterface $workUnit */ $factory) {
+                $this->state->setNextStepNumber();
+                $workUnit = $factory->create();
+                $workUnit->configure($factory->toEntity()->setParameters($this->state->getParameters()));
                 $this->eventDispatcher->dispatch($event, WorkUnitEvent::STEP_STARTED);
                 $workUnitResults = $workUnit->run();
                 $this->state->setParameters(array_merge($this->state->getParameters(), $workUnitResults));
@@ -85,7 +80,7 @@ abstract class AbstractJob extends AbstractWorkUnit implements JobInterface
         } finally {
             $this->state->setTerminatedAt(microtime(true));
             $this->eventDispatcher->dispatch($event, WorkUnitEvent::TERMINATED);
-            set_error_handler($previousErrorHandler);
+            restore_error_handler();
         }
 
         return $this->returnParameters();

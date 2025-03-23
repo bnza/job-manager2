@@ -20,7 +20,7 @@ final readonly class JobRunner
     public function __construct(
         private ManagerRegistry $registry,
         string $emName,
-        private JobServicesIdLocator $locator,
+        private WorkUnitFactoryServiceLocator $locator,
     ) {
         $this->entityManager = $this->registry->getManager($emName);
     }
@@ -45,15 +45,13 @@ final readonly class JobRunner
         }
 
         $serviceId = $entity->getService();
-        if (!$this->locator->has($serviceId)) {
-            throw new RuntimeException("Service \"$serviceId\" not found.");
-        }
+//        if (!$this->locator->has($serviceId)) {
+//            throw new RuntimeException("Service \"$serviceId\" not found.");
+//        }
 
-        $job = $this->locator->get($serviceId);
+        $factory = $this->locator->get($serviceId);
 
-        if (!($job instanceof JobInterface)) {
-            throw new RuntimeException("WorkUnitEntity '$id' must implement JobInterface.");
-        }
+        $job = $factory->create();
 
         $job->configure($entity);
         $job->run();

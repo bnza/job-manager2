@@ -35,12 +35,15 @@
             <tag name="doctrine.repository"/>
         </service>
 
-        <service id="bnza_job_manager.job_locator" class="Bnza\JobManagerBundle\JobServicesIdLocator"/>
+        <service id="Bnza\JobManagerBundle\WorkUnitDefinitionServiceLocator"/>
+        <service id="Bnza\JobManagerBundle\WorkUnitFactoryServiceLocator">
+            <argument key="$workUnitServiceDefinitionLocator" type="service" id="Bnza\JobManagerBundle\WorkUnitDefinitionServiceLocator"/>
+        </service>
 
         <service id="bnza_job_manager.job_runner" class="Bnza\JobManagerBundle\JobRunner">
             <argument key="$registry" type="service" id="doctrine"/>
             <argument key="$emName" type="string">%bnza_job_manager.em_name%</argument>
-            <argument key="$locator" type="service" id="bnza_job_manager.job_locator"/>
+            <argument key="$locator" type="service" id="Bnza\JobManagerBundle\WorkUnitFactoryServiceLocator"/>
         </service>
 
         <service id="bnza_job_manager.abstract_job_event_subscriber"
@@ -70,21 +73,34 @@
             <tag name="kernel.event_subscriber" lazy="true"/>
         </service>
 
-
-        <service id="bnza_job_manager.abstract_work_unit" class="Bnza\JobManagerBundle\AbstractWorkUnit" abstract="true" shared="false">
+        <service id="Bnza\JobManagerBundle\AbstractWorkUnitFactory" abstract="true">
             <argument key="$eventDispatcher" type="service" id="event_dispatcher"/>
             <argument key="$logger" type="service" id="logger"/>
         </service>
 
-        <service id="bnza_job_manager.abstract_job" class="Bnza\JobManagerBundle\AbstractJob" parent="bnza_job_manager.abstract_work_unit"
-            abstract="true" shared="false">
-            <tag name="bnza_job_manager.job"/>
+        <service
+            id="Bnza\JobManagerBundle\AbstractJobFactory"
+            abstract="true"
+            parent="Bnza\JobManagerBundle\AbstractWorkUnitFactory"
+        >
+            <argument key="$eventDispatcher" type="service" id="event_dispatcher"/>
+            <argument key="$logger" type="service" id="logger"/>
         </service>
 
-        <service id="bnza_job_manager.abstract_task" class="Bnza\JobManagerBundle\AbstractTask" parent="bnza_job_manager.abstract_work_unit"
-            abstract="true" shared="false">
-            <tag name="bnza_job_manager.task"/>
-        </service>
+        <!--        <service id="bnza_job_manager.abstract_work_unit" class="Bnza\JobManagerBundle\AbstractWorkUnit" abstract="true" shared="false">-->
+        <!--            <argument key="$eventDispatcher" type="service" id="event_dispatcher"/>-->
+        <!--            <argument key="$logger" type="service" id="logger"/>-->
+        <!--        </service>-->
+
+        <!--        <service id="bnza_job_manager.abstract_job" class="Bnza\JobManagerBundle\AbstractJob" parent="bnza_job_manager.abstract_work_unit"-->
+        <!--            abstract="true" shared="false">-->
+        <!--            <tag name="bnza_job_manager.job"/>-->
+        <!--        </service>-->
+
+        <!--        <service id="bnza_job_manager.abstract_task" class="Bnza\JobManagerBundle\AbstractTask" parent="bnza_job_manager.abstract_work_unit"-->
+        <!--            abstract="true" shared="false">-->
+        <!--            <tag name="bnza_job_manager.task"/>-->
+        <!--        </service>-->
 
         <service id="bnza_job_manager.cache_helper" class="Bnza\JobManagerBundle\CacheHelper" lazy="true">
             <argument key="$cache" type="service" id="%cache_pool_name%"/>

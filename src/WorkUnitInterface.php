@@ -4,15 +4,11 @@ namespace Bnza\JobManagerBundle;
 
 use Symfony\Component\Uid\Uuid;
 
-interface WorkUnitInterface extends ConfigurableInterface
+interface WorkUnitInterface extends ConfigurableInterface, WorkUnitDefinitionInterface
 {
     // Info
 
     public function getId(): ?Uuid;
-
-    public function getName(): string;
-
-    public function getDescription(): string;
 
     public function getType(): string;
 
@@ -22,7 +18,6 @@ interface WorkUnitInterface extends ConfigurableInterface
      * @return array<string, mixed> | null
      */
     public function run(): array|null;
-
 
     public function setUp(): void;
 

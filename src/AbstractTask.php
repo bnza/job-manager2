@@ -22,7 +22,7 @@ abstract class AbstractTask extends AbstractWorkUnit implements WorkerInterface
         $this->eventDispatcher->dispatch($event, WorkUnitEvent::STARTED);
         try {
             foreach ($this->getSteps() as $i => $step) {
-                ++$this->currentStepNumber;
+                $this->state->setNextStepNumber();
                 $this->eventDispatcher->dispatch($event, WorkUnitEvent::STEP_STARTED);
                 $this->executeStep($i, $step);
                 $this->eventDispatcher->dispatch($event, WorkUnitEvent::STEP_TERMINATED);

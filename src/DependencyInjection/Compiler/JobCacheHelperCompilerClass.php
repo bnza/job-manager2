@@ -2,7 +2,6 @@
 
 namespace Bnza\JobManagerBundle\DependencyInjection\Compiler;
 
-use Bnza\JobManagerBundle\JobServicesIdLocator;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
