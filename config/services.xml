@@ -73,6 +73,7 @@
 
         <service id="bnza_job_manager.abstract_work_unit" class="Bnza\JobManagerBundle\AbstractWorkUnit" abstract="true" shared="false">
             <argument key="$eventDispatcher" type="service" id="event_dispatcher"/>
+            <argument key="$logger" type="service" id="logger"/>
         </service>
 
         <service id="bnza_job_manager.abstract_job" class="Bnza\JobManagerBundle\AbstractJob" parent="bnza_job_manager.abstract_work_unit"

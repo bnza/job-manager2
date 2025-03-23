@@ -2,7 +2,6 @@
 
 namespace Bnza\JobManagerBundle;
 
-use Bnza\JobManagerBundle\Entity\WorkUnitEntity;
 use Symfony\Component\Uid\Uuid;
 
 interface WorkUnitInterface extends ConfigurableInterface

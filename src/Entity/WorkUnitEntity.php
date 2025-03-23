@@ -3,6 +3,7 @@
 namespace Bnza\JobManagerBundle\Entity;
 
 use Bnza\JobManagerBundle\Exception\ReadOnlyPropertyException;
+use Exception;
 use Symfony\Component\Uid\Uuid;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -18,7 +19,7 @@ class WorkUnitEntity
     #[Groups("Bnza:WorkUnit:read")]
     private string $class;
     #[Groups("Bnza:WorkUnit:read")]
-    private ?string $service;
+    private ?string $service = null;
     #[Groups("Bnza:WorkUnit:read")]
     private string $description;
 
@@ -180,10 +181,9 @@ class WorkUnitEntity
 
     public function setService(?string $service): WorkUnitEntity
     {
-        if (isset($this->service)) {
+        if (!is_null($this->service)) {
             throw new ReadOnlyPropertyException('service');
         }
-
         $this->service = $service;
 
         return $this;

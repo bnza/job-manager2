@@ -7,6 +7,7 @@ use Bnza\JobManagerBundle\Entity\WorkUnitEntity;
 use Bnza\JobManagerBundle\Event\WorkUnitEvent;
 use Bnza\JobManagerBundle\Exception\JobCancelledException;
 use InvalidArgumentException;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Uid\Uuid;
 
@@ -22,9 +23,16 @@ abstract class AbstractWorkUnit implements WorkUnitInterface
 
     protected ?string $serviceId = null;
 
-    public function __construct(EventDispatcherInterface $eventDispatcher)
-    {
+    public function __construct(
+        EventDispatcherInterface $eventDispatcher,
+        protected readonly LoggerInterface $logger
+    ) {
         $this->eventDispatcher = $eventDispatcher;
+        $this->reset();
+    }
+
+    public function reset(): void
+    {
         $this->state = new WorkUnitEntity()
             ->setClass(static::class)
             ->setName($this->getName())
@@ -48,6 +56,7 @@ abstract class AbstractWorkUnit implements WorkUnitInterface
         $this->eventDispatcher->dispatch($event, WorkUnitEvent::PRE_CONFIGURE);
 
         if (is_null($entity->getId())) {
+            $this->logger->debug('Pippo: '.$this->state->getService());
             $this->state
                 ->setService($entity->getService())
                 ->setParent($entity->getParent())
