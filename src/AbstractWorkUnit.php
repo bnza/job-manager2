@@ -52,7 +52,7 @@ abstract class AbstractWorkUnit implements WorkUnitInterface
         $this->eventDispatcher->dispatch($event, WorkUnitEvent::PRE_CONFIGURE);
 
         if (is_null($entity->getId())) {
-            $this->logger->debug('Pippo: '.$this->state->getService());
+            $this->logger->debug('Work unit: "'.$this->state->getService().'" configured');
             $this->state
                 ->setParent($entity->getParent())
                 ->setParameters($entity->getParameters());

@@ -46,6 +46,9 @@ class CacheHelper
         return $merged;
     }
 
+    /**
+     * @throws InvalidArgumentException
+     */
     public function get(Uuid $uuid, ?string $prop = null): mixed
     {
         $item = $this->cache->getItem($this->getKey($uuid));
