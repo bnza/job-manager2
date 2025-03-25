@@ -2,6 +2,7 @@
 
 namespace Bnza\JobManagerBundle\DependencyInjection\Compiler;
 
+use Bnza\JobManagerBundle\State\WorkUnitCachedItemProvider;
 use Bnza\JobManagerBundle\State\WorkUnitCollectionProvider;
 use Bnza\JobManagerBundle\State\WorkUnitItemProvider;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
@@ -15,7 +16,11 @@ class JobEntityManagerCompilerClass implements CompilerPassInterface
         $emName = $container->getParameter('bnza_job_manager.em_name');
         $entityManager = new Reference(sprintf('doctrine.orm.%s_entity_manager', $emName));
 
-        foreach ([WorkUnitItemProvider::class, WorkUnitCollectionProvider::class] as $serviceId) {
+        foreach ([
+                     WorkUnitCachedItemProvider::class,
+                     WorkUnitItemProvider::class,
+                     WorkUnitCollectionProvider::class,
+                 ] as $serviceId) {
             $definition = $container->getDefinition($serviceId);
             $definition->setArgument('$entityManager', $entityManager);
         }

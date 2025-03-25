@@ -62,7 +62,12 @@ abstract class AbstractJob extends AbstractWorkUnit implements JobInterface
             foreach ($this->workUnits as $serviceId => /** @var WorkUnitFactoryInterface $workUnit */ $factory) {
                 $this->state->setNextStepNumber();
                 $workUnit = $factory->create();
-                $workUnit->configure($factory->toEntity()->setParameters($this->state->getParameters()));
+                $workUnit->configure(
+                    $factory
+                        ->toEntity()
+                        ->setParent($this->state)
+                        ->setParameters($this->state->getParameters())
+                );
                 $this->eventDispatcher->dispatch($event, WorkUnitEvent::STEP_STARTED);
                 $workUnitResults = $workUnit->run();
                 $this->state->setParameters(array_merge($this->state->getParameters(), $workUnitResults));

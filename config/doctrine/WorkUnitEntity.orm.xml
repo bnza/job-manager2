@@ -15,6 +15,7 @@
         <field name="userId" nullable="true" column="user_id"/>
         <field name="class"/>
         <field name="service"/>
+        <field name="description"/>
         <field name="parameters" type="json" nullable="true">
             <options>
                 <option name="jsonb">true</option>

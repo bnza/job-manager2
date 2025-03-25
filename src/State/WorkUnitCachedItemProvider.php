@@ -5,6 +5,7 @@ namespace Bnza\JobManagerBundle\State;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProviderInterface;
 use Bnza\JobManagerBundle\CacheHelper;
+use Bnza\JobManagerBundle\Entity\CachedWorkUnit;
 use Bnza\JobManagerBundle\Entity\WorkUnitEntity;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Exception\ORMException;
@@ -15,16 +16,19 @@ use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Serializer\Exception\ExceptionInterface;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 
-class WorkUnitItemProvider implements ProviderInterface
+readonly class WorkUnitCachedItemProvider implements ProviderInterface
 {
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
+        private readonly CacheHelper $cache,
+        private readonly DenormalizerInterface $denormalizer,
         private readonly Security $security,
     ) {
 
     }
 
     /**
+     * @throws ExceptionInterface
      * @throws OptimisticLockException
      * @throws ORMException
      */
@@ -35,13 +39,26 @@ class WorkUnitItemProvider implements ProviderInterface
         }
         $id = $uriVariables["id"];
 
-        $workUnit = $this->entityManager->find(WorkUnitEntity::class, $id);
+        $cached = $this->cache->get($id);
 
-        if (!is_null($workUnit) && !$this->security->isGranted('ROLE_ADMIN')) {
-            $userId = $this->security->getToken()->getUser()->getUserIdentifier();
-            $workUnit = $workUnit->getUserId() === $userId ? $workUnit : null;
+        if ($cached) {
+            if (is_array($cached)) {
+                $cached['id'] = $id;
+                $a = new CachedWorkUnit($cached);
+
+                return $a;
+            }
         }
 
-        return $workUnit;
+        $workUnit = $this->entityManager->find(WorkUnitEntity::class, $id);
+
+        if (!is_null($workUnit)) {
+            return new CachedWorkUnit()
+                ->setId($workUnit->getId())
+                ->setStatus($workUnit->getStatus())
+                ->setCurrentStepNumber($workUnit->getCurrentStepNumber());
+        }
+
+        return null;
     }
 }

@@ -263,7 +263,7 @@ class WorkUnitEntity
 
     public function getUserId(): ?string
     {
-        return $this->userId;
+        return is_null($this->parent) ? $this->userId : $this->parent->getUserId();
     }
 
     public function setUserId(?string $userId): WorkUnitEntity
