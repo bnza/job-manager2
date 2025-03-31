@@ -25,10 +25,6 @@ final readonly class JobRunner
         $this->entityManager = $this->registry->getManager($emName);
     }
 
-    /**
-     * @throws OptimisticLockException
-     * @throws ORMException
-     */
     public function run(Uuid $id): void
     {
         $entity = $this->entityManager->find(JobEntity::class, $id);
@@ -45,9 +41,6 @@ final readonly class JobRunner
         }
 
         $serviceId = $entity->getService();
-//        if (!$this->locator->has($serviceId)) {
-//            throw new RuntimeException("Service \"$serviceId\" not found.");
-//        }
 
         $factory = $this->locator->get($serviceId);
 

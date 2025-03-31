@@ -30,6 +30,8 @@ abstract class AbstractTask extends AbstractWorkUnit implements WorkerInterface
             $this->tearDown();
             $this->state->getStatus()->success();
             $this->eventDispatcher->dispatch($event, WorkUnitEvent::SUCCESS);
+
+            return $this->returnParameters();
         } catch (Exception $e) {
             $this->state->getStatus()->error();
             $this->eventDispatcher->dispatch($event, WorkUnitEvent::ERROR);
@@ -40,8 +42,6 @@ abstract class AbstractTask extends AbstractWorkUnit implements WorkerInterface
             $this->state->setTerminatedAt(microtime(true));
             $this->eventDispatcher->dispatch($event, WorkUnitEvent::TERMINATED);
         }
-
-        return $this->returnParameters();
     }
 
     public final function getType(): string

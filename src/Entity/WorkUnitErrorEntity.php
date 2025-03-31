@@ -74,4 +74,16 @@ class WorkUnitErrorEntity
 
         return $this;
     }
+
+    public function getValue(string $string): mixed
+    {
+        return array_key_exists($string, $this->values) ? $this->values[$string] : null;
+    }
+
+    public function setValue(string $string, mixed $value): WorkUnitErrorEntity
+    {
+        $this->values[$string] = $value;
+
+        return $this;
+    }
 }

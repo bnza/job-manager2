@@ -234,6 +234,9 @@ class WorkUnitEntity
         return $this;
     }
 
+    /**
+     * @return Collection<WorkUnitErrorEntity>
+     */
     public function getErrors(): Collection
     {
         return $this->errors;

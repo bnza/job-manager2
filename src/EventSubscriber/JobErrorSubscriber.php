@@ -19,9 +19,7 @@ class JobErrorSubscriber extends AbstractJobSubscriber
 
     public function onWorkMessageFailure(WorkerMessageFailedEvent $event): void
     {
-        $envelope = $event->getEnvelope();
         $throwable = $event->getThrowable();
-        $receiverName = $event->getReceiverName();
         $exception = $throwable->getPrevious();
         if ($exception instanceof JobExceptionInterface) {
             $job = $this->getEntityManager()->getRepository(WorkUnitEntity::class)->find($exception->getJobId());
